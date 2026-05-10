@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="房東宇宙">
+<meta name="theme-color" content="#fdfbf9">
+<title>虎尾房東宇宙 (動態參數快照版)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<style>
+  /* --- 基礎樣式 --- */
+  body { font-family: "Noto Sans TC", "微軟正黑體", sans-serif; background: linear-gradient(135deg, #fdfbf9, #f4ece4); margin: 0; padding: 15px 10px; color: #5a4a3a; }
+  .container { max-width: 950px; margin: auto; background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(139, 111, 71, 0.15); padding: 25px 15px; border: 1px solid #e6d8c8; position: relative;}
+  
+  header { text-align: center; padding-bottom: 15px; border-bottom: 2px solid #f0e6d6; margin-bottom: 25px; position: relative; }
+  header h1 { font-size: 26px; color: #8b6f47; margin: 0 0 5px 0; letter-spacing: 1px; }
+  header p { font-size: 14px; margin: 0; opacity: 0.8; }
+  
+  .floor { background: #fffdfa; padding: 20px 10px; border-radius: 20px; margin-bottom: 25px; box-shadow: 0 8px 20px rgba(0,0,0,0.03); border: 1px solid #f2ebe2; }
+  .floor h2 { text-align: center; color: #fff; font-size: 18px; margin: -20px -10px 15px -10px; background: #a68b66; padding: 10px; border-radius: 20px 20px 0 0; }
+
+  .bill-input { display: flex; flex-wrap: wrap; justify-content: space-around; background: #fcf8f2; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px dashed #dccab6; gap: 8px; }
+  .input-group { display: flex; align-items: center; font-weight: bold; color: #8b6f47; font-size: 14px; }
+  .input-group input { background: #fff; border: 2px solid #e6d8c8; border-radius: 8px; font-size: 16px; padding: 6px; width: 85px; margin: 0 5px; text-align: center; color: #5a4a3a; }
+  
+  .date-selector { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; background: #fff8f0; padding: 15px; border-radius: 16px; border: 2px solid #e6d8c8; }
+  .date-selector select, .date-selector input { font-size: 18px; padding: 6px 10px; border-radius: 10px; border: 2px solid #c4a86a; color: #5a4a3a; background: white; font-weight: bold; }
+
+  .table-wrapper { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -5px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0 5px; min-width: 600px; }
+  th { color: #8b6f47; font-size: 13px; padding: 5px; text-align: center; font-weight: 600; }
+  td { background: #ffffff; padding: 8px 3px; text-align: center; border-top: 1px solid #f0e6d6; border-bottom: 1px solid #f0e6d6; vertical-align: middle; font-size: 14px; }
+  td:first-child { border-left: 1px solid #f0e6d6; border-radius: 10px 0 0 10px; font-weight: bold; color: #8b6f47; white-space: nowrap;}
+  .col-last { border-right: 1px solid #f0e6d6; border-radius: 0 10px 10px 0; background: #fff8f0; vertical-align: middle; }
+
+  td input[type="number"] { width: 65px; padding: 8px 0; text-align: center; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; transition: background 0.3s; }
+  .rent-input { background: #f0f9ff; border-color: #bee3f8; color: #2b6cb0; font-weight: bold; }
+  .paid-check { width: 22px; height: 22px; cursor: pointer; vertical-align: middle; margin: 0; }
+  .partial-btn { display: inline-block; font-size: 12px; cursor: pointer; margin-left: 3px; padding: 2px 4px; border-radius: 4px; background: #fde8d7; color: #d35400; font-weight: bold; vertical-align: middle; }
+  
+  .btn-room-settings { background: none; border: none; font-size: 14px; cursor: pointer; padding: 0 2px; color: #8b6f47; opacity: 0.7; transition: opacity 0.2s, transform 0.2s; vertical-align: middle; }
+  .btn-room-settings:active { transform: rotate(90deg); }
+  .btn-room-settings:hover { opacity: 1; transform: scale(1.1); }
+  @keyframes blink { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0.4; transform: scale(1.1); } }
+  .lease-alert { display: inline-block; animation: blink 0.8s infinite alternate; cursor: help; vertical-align: middle; }
+  .lease-expired { display: inline-block; cursor: help; filter: grayscale(1); vertical-align: middle; }
+
+  .btn-mini-chart { background: #f3e6d5; border: 1px solid #dccab6; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; color: #8b6f47; font-size: 12px; }
+  
+  .action-bar { display: flex; flex-direction: column; gap: 10px; margin-top: 25px; }
+  .action-bar-bottom { display: flex; gap: 10px; margin-top: 20px; margin-bottom: 40px; flex-wrap: wrap; }
+  .btn { padding: 16px; font-size: 18px; border: none; border-radius: 16px; cursor: pointer; font-weight: bold; color: white; text-align: center; transition: all 0.3s; }
+  .action-bar-bottom .btn { flex: 1; min-width: 130px; }
+  .btn:active { opacity: 0.8; transform: scale(0.98); }
+  .btn-calc { background: linear-gradient(to bottom, #c4a86a, #a68b66); box-shadow: 0 8px 20px rgba(166, 139, 102, 0.3); }
+  .btn-save { background: #27ae60; box-shadow: 0 8px 20px rgba(39, 174, 96, 0.2); }
+  
+  #result { margin-top: 40px; border-top: 3px dashed #e6d8c8; padding-top: 30px; display: none; }
+  #summary { background: #fdfbf9; padding: 20px; border-radius: 16px; text-align: center; font-size: 18px; line-height: 1.8; border: 2px solid #f0e6d6; margin-bottom: 25px; color: #4a3f35; font-weight: bold; }
+  
+  #finalTable { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  #finalTable th { background: #a68b66; color: white; padding: 10px; font-size: 14px; }
+  #finalTable td { padding: 10px; border-bottom: 1px solid #eee; font-size: 15px; }
+
+  .unpaid-total { font-size: 20px; color: #e53e3e; font-weight: bold; text-align: right; margin-top: 10px; border-top: 2px solid #feb2b2; padding-top: 10px; }
+
+  .msg-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); border-left: 6px solid #c4a86a; line-height: 1.8; font-size: 15px; white-space: pre-wrap; color: #4a3f35; cursor: pointer; transition: background 0.3s; }
+  .msg-card:active { background: #f0f4f8; }
+
+  .btn-tool { padding: 12px; border-radius: 8px; border: none; cursor: pointer; font-weight: bold; font-size: 15px; display: flex; align-items: center; gap: 5px; color: white; transition: 0.2s; justify-content: center;}
+  .btn-excel { background: #217346; } 
+  .btn-backup { background: #8e44ad; }
+  .btn-import { background: #e67e22; }
+
+  .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); justify-content: center; align-items: center; }
+  .modal-content { background: white; width: 90%; max-width: 500px; padding: 25px; border-radius: 24px; position: relative; box-shadow: 0 25px 50px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+  .close-modal { position: absolute; top: 15px; right: 20px; font-size: 28px; font-weight: bold; color: #aaa; cursor: pointer; }
+
+  #autoSyncToast { position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #3182ce; color: white; padding: 10px 20px; border-radius: 30px; font-size: 14px; font-weight: bold; z-index: 9999; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: all 0.5s ease; opacity: 0; pointer-events: none; }
+
+  /* 歷史紀錄專區精簡樣式 */
+  #historySection { margin-top: 40px; padding: 15px; background: #fffdfa; border-radius: 16px; border: 1px solid #f0e6d6; }
+  .history-year-group { margin-bottom: 15px; }
+  .history-year-title { font-size: 15px; font-weight: bold; color: #8b6f47; margin-bottom: 8px; border-bottom: 1px dashed #e6d8c8; padding-bottom: 4px; }
+  .history-month-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
+  .history-item { background: white; border: 1px solid #e6d8c8; border-radius: 6px; display: flex; align-items: stretch; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03); transition: 0.2s; height: 34px; }
+  .history-item:hover { border-color: #c4a86a; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .history-load-btn { font-size: 14px; font-weight: bold; color: #5a4a3a; cursor: pointer; flex: 1; display: flex; align-items: center; justify-content: center; background: #fdfbf9; transition: background 0.2s; }
+  .history-load-btn:hover { background: #f0e6d6; color: #8b6f47; }
+  .history-del-btn { background: #fff5f5; color: #e53e3e; border: none; border-left: 1px solid #f0e6d6; padding: 0 8px; font-size: 12px; cursor: pointer; transition: 0.2s; }
+  .history-del-btn:hover { background: #fed7d7; }
+
+  @media print {
+    .action-bar, .action-bar-bottom, .date-selector, #inputSection, button, #historySection, .btn-mini-chart, .close-modal, .btn-room-settings { display: none !important; }
+    .container { box-shadow: none; border: none; width: 100%; padding: 0; }
+    #result { display: block !important; border: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="autoSyncToast">🔄 自動檢查雲端資料中...</div>
+
+<div class="container">
+  <header>
+    <h1>虎尾電費計算</h1>
+    <p>動態參數・極簡畫面・全自動延續版</p>
+  </header>
+
+  <div class="date-selector">
+    📅 <b>核算日期：</b>
+    <input type="number" id="calcYear" style="width:90px;" inputmode="numeric" pattern="[0-9]*"> 年
+    <select id="calcMonth">
+        <script>for(let i=1; i<=12; i++) document.write(`<option value="${i}">${i}</option>`);</script>
+    </select> 月
+  </div>
+
+  <div id="inputSection"></div>
+
+  <div class="action-bar">
+    <button class="btn btn-calc" onclick="calculateAll(true, false)">⚡ 開始合併結算並生成通知</button>
+  </div>
+
+  <div id="result">
+    <h2 style="text-align:center; color:#8b6f47;">📋 本期費用結算單</h2>
+    <div id="summary"></div>
+    
+    <div class="table-wrapper">
+      <table id="finalTable">
+        <thead>
+            <tr><th>房號</th><th>房租+水</th><th>個人電</th><th>公電</th><th>總計</th></tr>
+        </thead>
+        <tbody id="finalTableBody"></tbody>
+      </table>
+    </div>
+
+    <div id="unpaidSection" style="background: #fff5f5; border: 2px solid #feb2b2; padding: 15px; border-radius: 16px; margin-top: 25px;">
+        <h3 style="margin-top:0; color:#c53030;">⚠️ 欠款匯總</h3>
+        <div id="unpaidList"></div>
+        <div id="unpaidTotal" class="unpaid-total">總計未收：0 元</div>
+    </div>
+
+    <div class="action-bar-bottom">
+        <button id="btnSaveUpload" class="btn btn-save" style="width:100%; font-size:20px; padding:18px; margin-bottom:10px;" onclick="saveAndUpload()">💾 儲存本期數據 ＆ 同步至雲端</button>
+        <button class="btn" style="background:#3182ce;" onclick="prepareNextMonth()">🆕 新增下期電費</button>
+        <button class="btn" style="background:#2c3e50;" onclick="window.print()">🖨️ 列印結算單</button>
+        <button class="btn" style="background:#7f8c8d;" onclick="openAdvancedSettings()">⚙️ 系統與報表</button>
+    </div>
+
+    <h3 style="text-align:center; color:#8b6f47;">💬 房客通知文案 (點擊文案即可複製)</h3>
+    <div id="messages"></div>
+  </div>
+
+  <div id="historySection">
+    <h2 style="color:#8b6f47; text-align:center; margin-top:10px; font-size: 20px;">📜 歷史紀錄切換</h2>
+    <div id="historyList"></div>
+  </div>
+
+  <div id="roomModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('roomModal')">&times;</span>
+      <h3 id="modalTitle" style="text-align:center; color:#8b6f47; margin-bottom:20px;">歷史用電趨勢</h3>
+      <canvas id="roomChartCanvas"></canvas>
+      <div id="roomHistoryList" style="margin-top:20px; font-size:14px; color:#666; border-top:1px solid #eee; padding-top:15px;"></div>
+    </div>
+  </div>
+
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('settingsModal')">&times;</span>
+      <h3 id="settingsModalTitle" style="text-align:center; color:#8b6f47; margin-top:0; margin-bottom:15px;">⚙️ 房間管理中心</h3>
+      
+      <div style="background:#fdfbf9; border:1px solid #e6d8c8; padding:15px; border-radius:12px; margin-bottom:15px;">
+          <h4 style="margin:0 0 10px 0; color:#8b6f47;">👤 房客資料紀錄 (僅供房東參考/報表追溯)</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div style="grid-column: 1 / -1; display: flex; gap:10px;">
+                  <div style="flex:1;">
+                      <label style="font-size:12px; font-weight:bold; color:#a68b66;">姓名/稱呼</label>
+                      <input type="text" id="tName" placeholder="如：陳小明" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+                  </div>
+                  <div style="flex:1;">
+                      <label style="font-size:12px; font-weight:bold; color:#a68b66;">聯絡電話/LINE</label>
+                      <input type="text" id="tPhone" placeholder="聯絡方式" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+                  </div>
+              </div>
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">起租日</label>
+                  <input type="date" id="tLeaseStart" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">到期日 (剩30天自動提醒)</label>
+                  <input type="date" id="tLeaseEnd" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+              <div style="grid-column: 1 / -1;">
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">歷史追溯備註 (如車號、押金等)</label>
+                  <textarea id="tNotes" rows="2" placeholder="備註事項" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px; font-family:sans-serif;"></textarea>
+              </div>
+          </div>
+      </div>
+
+      <h4 style="margin:0 0 10px 0; color:#8b6f47;">💬 專屬文案設定</h4>
+      <p style="font-size:13px; color:#666; margin-bottom:10px; line-height:1.6;">
+      可用變數：<code style="background:#eee; padding:2px 4px; border-radius:4px;">{{房號}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{結算年月}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{房租}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{已繳}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{租金明細}}</code> 
+      <br>
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{本期電費}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{總度數}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{平均電價}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{前期欠款明細}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{應付總額}}</code> 
+      <code style="background:#eee; padding:2px 4px; border-radius:4px;">{{結語}}</code>
+      </p>
+      <textarea id="templateText" rows="6" style="width:100%; box-sizing:border-box; border:2px solid #e6d8c8; border-radius:8px; padding:10px; font-size:14px; font-family:sans-serif;"></textarea>
+      
+      <div style="display:flex; gap:10px; margin-top:15px;">
+        <button class="btn" style="flex:1; background:#95a5a6; font-size:16px; padding:12px;" onclick="resetTemplate()">恢復預設文案</button>
+        <button class="btn btn-save" style="flex:2; font-size:16px; padding:12px;" onclick="saveRoomSettings()">💾 儲存房間設定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="advancedSettingsModal" class="modal">
+    <div class="modal-content">
+      <span class="close-modal" onclick="closeModal('advancedSettingsModal')">&times;</span>
+      <h3 style="text-align:center; color:#8b6f47; margin-top:0; margin-bottom:20px;">⚙️ 進階系統設定</h3>
+      
+      <div style="background:#fcf8f2; border:1px solid #dccab6; padding:15px; border-radius:12px; margin-bottom:20px;">
+          <h4 style="margin:0 0 10px 0; color:#8b6f47;">⚡ 公共用電參數設定 (全棟套用)</h4>
+          <p style="font-size:12px; color:#666; margin-top:0; margin-bottom:10px;">修改後只會套用於「未來儲存」的帳單，已存檔的舊帳單不受影響(快照保護)。</p>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">每房基本公電 (度)</label>
+                  <input type="number" id="cfgBasePub" value="20" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">4樓總表 扣減度數</label>
+                  <input type="number" id="cfgDed4" value="180" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">3樓總表 扣減度數</label>
+                  <input type="number" id="cfgDed3" value="0" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+              <div>
+                  <label style="font-size:12px; font-weight:bold; color:#a68b66;">2樓總表 扣減度數</label>
+                  <input type="number" id="cfgDed2" value="0" style="width:100%; box-sizing:border-box; padding:8px; border-radius:6px; border:1px solid #ccc; font-size:14px;">
+              </div>
+          </div>
+          <button class="btn btn-save" style="width:100%; margin-top:10px; padding:10px; font-size:15px;" onclick="saveAppConfig()">💾 儲存參數設定</button>
+      </div>
+
+      <div style="background:#ebf8ff; border:1px solid #bee3f8; padding:15px; border-radius:12px; margin-bottom:20px;">
+          <h4 style="margin:0 0 10px 0; color:#2b6cb0;">☁️ Google 雲端強制同步</h4>
+          <p style="font-size:13px; color:#666; margin-bottom:10px;">若您想強制從雲端抓取最新資料覆蓋本機，可點擊下方按鈕：</p>
+          <button class="btn-tool" style="width:100%; background:#3182ce; justify-content:center;" onclick="syncFromCloud()">📥 強制手動下載雲端資料</button>
+      </div>
+
+      <div style="background:#fdfbf9; border:1px solid #e6d8c8; padding:15px; border-radius:12px; margin-bottom:20px;">
+          <h4 style="margin:0 0 10px 0; color:#8b6f47;">📊 報表與本地備份</h4>
+          <button class="btn-tool btn-excel" style="width:100%; margin-bottom:10px;" onclick="exportExcel()">📊 匯出美化 XLSX 報表 (含備註追溯)</button>
+          <div style="display:flex; gap:10px;">
+              <button class="btn-tool btn-backup" style="flex:1; justify-content:center;" onclick="exportJSON()">備份 JSON</button>
+              <button class="btn-tool btn-import" style="flex:1; justify-content:center;" onclick="document.getElementById('importFile').click()">還原本機資料</button>
+          </div>
+          <input type="file" id="importFile" style="display:none" onchange="importJSON(this)" accept=".json">
+      </div>
+
+      <div style="text-align:center; margin-top:30px; border-top:1px dashed #ccc; padding-top:20px;">
+          <button onclick="clearHistory()" style="background:#e74c3c; color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer; font-weight:bold;">⚠️ 清空所有歷史紀錄</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ==========================================
+// Google Apps Script 網址 
+// ==========================================
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwp5tmYEYYiR9uDdpjdeIqdObo1tD4XsPPdX145Qj8IQ0KSnPfRARJzIUn84fxT_05-MQ/exec";
+
+// --- 1. 全域變數定義與常數設定 ---
+const APP_CONFIG = {
+    rooms: ["201","202","203","301","302","303","401","402","403"],
+    floors: [
+        { f: '2', rooms: ['201','202','203'] },
+        { f: '3', rooms: ['301','302','303'] },
+        { f: '4', rooms: ['401','402','403'] }
+    ]
+    // 注意：原本寫死的 publicKwhDeduction 和 basePublicKwh 已移至動態取得！
+};
+
+const rooms = APP_CONFIG.rooms;
+let roomChart = null;
+let currentEditingRoom = null;
+const defaultTemplate = `{{房號}} 同學你好，這是您的 {{結算年月}} 月份費用結算：\n\n{{租金明細}}⚡ 電費總計：{{結算年月}} 月電費共 {{本期電費}} 元 ({{總度數}}度)，每度 {{平均電價}} (含個人及公電)\n{{前期欠款明細}}-----------------------\n✅ 應付總額：{{應付總額}} 元{{結語}}`;
+
+// --- 工具函數 (Helpers) ---
+const getNum = (id) => {
+    const el = document.getElementById(id);
+    return el && el.value ? parseFloat(el.value) : 0;
+};
+const escapeHTML = (str) => {
+    return str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag] || tag));
+};
+
+function getTenantProfile(room) {
+    return JSON.parse(localStorage.getItem(`landlord_tenant_profile_${room}`) || '{}');
+}
+
+// 取得全域公電參數
+function getGlobalConfig() {
+    let defaultCfg = { basePublicKwh: 20, deduction: { "2": 0, "3": 0, "4": 180 } };
+    let saved = localStorage.getItem('landlord_global_config');
+    return saved ? JSON.parse(saved) : defaultCfg;
+}
+
+window.addEventListener('click', function(event) {
+    if (event.target.classList.contains('modal')) {
+        event.target.style.display = "none";
+    }
+});
+
+// --- 2. 雲端同步邏輯 ---
+async function autoSyncFromCloudSilent() {
+    const safeUrl = GAS_URL.trim();
+    if (!safeUrl || safeUrl.includes("請將您的網址")) return;
+    
+    const toast = document.getElementById('autoSyncToast');
+    toast.style.opacity = "1";
+
+    try {
+        const response = await fetch(safeUrl);
+        if (!response.ok) throw new Error();
+        const rawData = await response.text();
+        
+        let parsed = JSON.parse(rawData);
+        let isDifferent = false;
+        
+        const currentLocal = localStorage.getItem('landlord_history_v2') || "[]";
+        let newHistoryStr = Array.isArray(parsed) ? rawData : JSON.stringify(parsed.history || []);
+        if (currentLocal !== newHistoryStr) isDifferent = true;
+
+        if (!Array.isArray(parsed)) {
+            rooms.forEach(rm => {
+                let localTpl = localStorage.getItem(`landlord_msg_template_${rm}`) || null;
+                let cloudTpl = parsed.templates && parsed.templates[rm] ? parsed.templates[rm] : null;
+                if (localTpl !== cloudTpl) isDifferent = true;
+                
+                let localProf = localStorage.getItem(`landlord_tenant_profile_${rm}`) || null;
+                let cloudProf = parsed.profiles && parsed.profiles[rm] ? parsed.profiles[rm] : null;
+                if (localProf !== cloudProf) isDifferent = true;
+            });
+            
+            // 比對全局參數
+            let localCfg = localStorage.getItem('landlord_global_config') || null;
+            let cloudCfg = parsed.globalConfig ? JSON.stringify(parsed.globalConfig) : null;
+            if (localCfg !== cloudCfg && cloudCfg) isDifferent = true;
+        }
+
+        if (isDifferent) {
+            if (Array.isArray(parsed)) {
+                localStorage.setItem('landlord_history_v2', rawData);
+            } else {
+                localStorage.setItem('landlord_history_v2', newHistoryStr);
+                rooms.forEach(rm => {
+                    if (parsed.templates && parsed.templates[rm]) localStorage.setItem(`landlord_msg_template_${rm}`, parsed.templates[rm]);
+                    if (parsed.profiles && parsed.profiles[rm]) localStorage.setItem(`landlord_tenant_profile_${rm}`, parsed.profiles[rm]);
+                });
+                if (parsed.globalConfig) localStorage.setItem('landlord_global_config', JSON.stringify(parsed.globalConfig));
+            }
+            toast.innerText = "✅ 發現雲端有新資料，正在更新畫面...";
+            toast.style.background = "#38a169";
+            setTimeout(() => location.reload(), 1200);
+        } else {
+            toast.innerText = "✅ 已是最新資料";
+            toast.style.background = "#38a169";
+            setTimeout(() => toast.style.opacity = "0", 1500);
+        }
+    } catch(e) {
+        toast.innerText = "⚠️ 雲端離線，使用本機資料";
+        toast.style.background = "#718096";
+        setTimeout(() => toast.style.opacity = "0", 2000);
+    }
+}
+
+async function silentUploadToCloud() {
+    const safeUrl = GAS_URL.trim();
+    if (!safeUrl || safeUrl.includes("請將您的網址")) return;
+    
+    let syncData = {
+        history: JSON.parse(localStorage.getItem('landlord_history_v2') || '[]'),
+        templates: {},
+        profiles: {},
+        globalConfig: JSON.parse(localStorage.getItem('landlord_global_config') || 'null')
+    };
+    rooms.forEach(r => {
+        syncData.templates[r] = localStorage.getItem(`landlord_msg_template_${r}`);
+        syncData.profiles[r] = localStorage.getItem(`landlord_tenant_profile_${r}`);
+    });
+
+    try {
+        await fetch(safeUrl, { method: "POST", mode: "no-cors", body: JSON.stringify(syncData) });
+    } catch(e) {}
+}
+
+async function saveAndUpload() {
+    let y = document.getElementById('calcYear').value, m = document.getElementById('calcMonth').value;
+    let dateName = `${y}-${m}`;
+    const history = getHistory();
+    const data = { id: Date.now(), name: dateName, year: y, month: m, inputs: {} };
+    
+    // 📸 將當下的公電設定進行「快照」，確保舊帳單計算永遠不會走鐘
+    data.configSnapshot = getGlobalConfig();
+    
+    ["2","3","4"].forEach(f => { data.inputs['bill'+f] = document.getElementById('bill'+f).value; data.inputs['kwh'+f] = document.getElementById('kwh'+f).value; });
+    
+    rooms.forEach(r => { 
+        data.inputs[r+'l'] = document.getElementById(r+'l').value; 
+        data.inputs[r+'n'] = document.getElementById(r+'n').value; 
+        data.inputs[r+'r'] = document.getElementById(r+'r').value; 
+        data.inputs[r+'p'] = document.getElementById(r+'p').checked;
+        data.inputs[r+'p_amt'] = document.getElementById(r+'p_amt').value;
+        
+        let profile = getTenantProfile(r);
+        data.inputs[r+'_tName'] = profile.tenantName || '';
+        data.inputs[r+'_tPhone'] = profile.tenantPhone || '';
+        data.inputs[r+'_tNotes'] = profile.tenantNotes || '';
+
+        localStorage.setItem(r+'_last', data.inputs[r+'n']); 
+        localStorage.setItem(r+'_rent', data.inputs[r+'r']); 
+    });
+    
+    const filtered = history.filter(h => h.name !== dateName); filtered.unshift(data);
+    localStorage.setItem('landlord_history_v2', JSON.stringify(filtered));
+    renderHistoryList();
+
+    const safeUrl = GAS_URL.trim();
+    if (!safeUrl || safeUrl.includes("請將您的網址")) {
+        alert("💾 本機儲存成功！\n(尚未設定雲端網址，故未上傳)");
+        return;
+    }
+
+    let btn = document.getElementById('btnSaveUpload');
+    let originalText = btn.innerText;
+    btn.innerText = "⏳ 本機已儲存，正在同步雲端...";
+    btn.style.background = "#d69e2e";
+
+    let syncData = {
+        history: JSON.parse(localStorage.getItem('landlord_history_v2') || '[]'),
+        templates: {},
+        profiles: {},
+        globalConfig: JSON.parse(localStorage.getItem('landlord_global_config') || 'null')
+    };
+    rooms.forEach(r => {
+        syncData.templates[r] = localStorage.getItem(`landlord_msg_template_${r}`);
+        syncData.profiles[r] = localStorage.getItem(`landlord_tenant_profile_${r}`);
+    });
+
+    try {
+        await fetch(safeUrl, { method: "POST", mode: "no-cors", body: JSON.stringify(syncData) });
+        btn.innerText = "✅ 儲存 ＆ 上傳成功！";
+        btn.style.background = "#38a169";
+        setTimeout(() => { btn.innerText = originalText; btn.style.background = "#27ae60"; }, 3000);
+    } catch(e) {
+        alert("💾 本機儲存成功，但上傳雲端失敗：" + e.message);
+        btn.innerText = originalText; btn.style.background = "#27ae60";
+    }
+}
+
+async function syncFromCloud() {
+    const safeUrl = GAS_URL.trim();
+    if (!safeUrl || safeUrl.includes("請將您的網址")) return alert("❗ 請先在原始碼中填寫 GAS_URL！");
+    if (!confirm("⚠️ 確定要從雲端下載最新資料並強制覆蓋本機紀錄嗎？")) return;
+
+    try {
+        const response = await fetch(safeUrl);
+        if (!response.ok) throw new Error("伺服器回應錯誤");
+        
+        const rawData = await response.text();
+        let parsed = JSON.parse(rawData);
+        
+        if (Array.isArray(parsed)) {
+            localStorage.setItem('landlord_history_v2', rawData);
+        } else {
+            localStorage.setItem('landlord_history_v2', JSON.stringify(parsed.history || []));
+            rooms.forEach(rm => {
+                if (parsed.templates && parsed.templates[rm]) localStorage.setItem(`landlord_msg_template_${rm}`, parsed.templates[rm]);
+                if (parsed.profiles && parsed.profiles[rm]) localStorage.setItem(`landlord_tenant_profile_${rm}`, parsed.profiles[rm]);
+            });
+            if (parsed.globalConfig) localStorage.setItem('landlord_global_config', JSON.stringify(parsed.globalConfig));
+        }
+        alert("✅ 強制下載成功！即將重新整理畫面...");
+        location.reload();
+    } catch(e) { alert("❌ 下載失敗：" + e.message); }
+}
+
+// --- 3. 初始化介面與按鈕邏輯 ---
+let floorHtml = "";
+APP_CONFIG.floors.forEach(cfg => {
+  floorHtml += `
+    <div class="floor">
+      <h2>${cfg.f} 樓台電資訊</h2>
+      <div class="bill-input">
+        <div class="input-group">總度數 <input type="number" id="kwh${cfg.f}" placeholder="度" inputmode="numeric" pattern="[0-9]*"></div>
+        <div class="input-group">總金額 <input type="number" id="bill${cfg.f}" placeholder="元" inputmode="numeric" pattern="[0-9]*"></div>
+      </div>
+      <div class="table-wrapper">
+        <table>
+          <tr><th>房號</th><th>房租+水</th><th>上期</th><th>本期</th><th>用電</th><th>繳</th></tr>
+          ${cfg.rooms.map(r => `
+            <tr>
+              <td><b>${r}</b> <button class="btn-room-settings" onclick="openRoomSettings('${r}')" title="房間管理中心">⚙️</button> <span id="alert_${r}"></span></td>
+              <td><input type="number" id="${r}r" class="rent-input" placeholder="租+水" inputmode="numeric" pattern="[0-9]*"></td>
+              <td><input type="number" id="${r}l" oninput="updateUsage()" inputmode="numeric" pattern="[0-9]*"></td>
+              <td><input type="number" id="${r}n" oninput="updateUsage()" inputmode="numeric" pattern="[0-9]*"></td>
+              <td><span id="${r}u">0</span> <button class="btn-mini-chart" onclick="openRoomHistory('${r}')">📈</button></td>
+              <td class="col-last">
+                <input type="checkbox" id="${r}p" class="paid-check" title="全額繳清" onchange="clearPartial('${r}')">
+                <span class="partial-btn" id="${r}p_text" onclick="setPartial('${r}')">💸</span>
+                <input type="hidden" id="${r}p_amt">
+              </td>
+            </tr>
+          `).join('')}
+        </table>
+      </div>
+    </div>
+  `;
+});
+document.getElementById('inputSection').innerHTML = floorHtml;
+
+window.onload = function() {
+  const history = getHistory();
+  
+  if (history.length > 0) {
+      const latest = [...history].sort((a,b) => (parseInt(b.year)*12+parseInt(b.month)) - (parseInt(a.year)*12+parseInt(a.month)))[0];
+      loadHistoryById(latest.id, false);
+  } else {
+      const d = new Date();
+      document.getElementById('calcYear').value = d.getFullYear();
+      document.getElementById('calcMonth').value = d.getMonth() + 1; 
+  }
+
+  renderHistoryList();
+  checkLeaseExpiration();
+
+  if (!sessionStorage.getItem('hasAutoSynced')) {
+      sessionStorage.setItem('hasAutoSynced', 'true');
+      autoSyncFromCloudSilent();
+  }
+}
+
+function prepareNextMonth() {
+    if(!confirm("確定要新增下一期嗎？\n這將會把所有的「本期度數」移至「上期」，並清空本期金額與繳費紀錄。")) return;
+
+    let y = parseInt(document.getElementById('calcYear').value);
+    let m = parseInt(document.getElementById('calcMonth').value);
+    m += 2;
+    if (m > 12) { 
+        m -= 12; 
+        y += 1; 
+    }
+    document.getElementById('calcYear').value = y;
+    document.getElementById('calcMonth').value = m;
+
+    rooms.forEach(r => {
+        let currentN = document.getElementById(r+'n').value;
+        if(currentN !== "") {
+            document.getElementById(r+'l').value = currentN; 
+        }
+        document.getElementById(r+'n').value = "";       
+        document.getElementById(r+'p').checked = false;  
+        document.getElementById(r+'p_amt').value = "";   
+        
+        let textBtn = document.getElementById(r+'p_text');
+        textBtn.textContent = "💸";
+        textBtn.style.color = "#d35400";
+    });
+
+    ["2","3","4"].forEach(f => {
+        document.getElementById('bill'+f).value = "";
+        document.getElementById('kwh'+f).value = "";
+    });
+
+    updateUsage();
+    document.getElementById('result').style.display = 'none'; 
+    window.scrollTo({top: 0, behavior: 'smooth'}); 
+    
+    alert(`已準備好 ${y} 年 ${m} 月的表單，上期度數已帶入，請開始輸入本期度數！`);
+}
+
+function checkLeaseExpiration() {
+    rooms.forEach(r => {
+        let profile = getTenantProfile(r);
+        let alertEl = document.getElementById(`alert_${r}`);
+        if (alertEl) {
+            alertEl.innerHTML = "";
+            if (profile.leaseEnd) {
+                let endDate = new Date(profile.leaseEnd);
+                let today = new Date();
+                today.setHours(0,0,0,0);
+                let diffTime = endDate.getTime() - today.getTime();
+                let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                if (diffDays <= 30 && diffDays >= 0) {
+                    alertEl.innerHTML = `<span class="lease-alert" title="租約即將於 ${diffDays} 天後到期 (${profile.leaseEnd})">🔔</span>`;
+                } else if (diffDays < 0) {
+                    alertEl.innerHTML = `<span class="lease-expired" title="租約已過期 ${Math.abs(diffDays)} 天 (${profile.leaseEnd})">⚠️</span>`;
+                }
+            }
+        }
+    });
+}
+
+function updateUsage() {
+  let hasError = false;
+  rooms.forEach(r => {
+    let l = getNum(r+'l');
+    let nInput = document.getElementById(r+'n');
+    let n = getNum(r+'n');
+    let u = n - l;
+
+    if (nInput.value !== "" && n < l) {
+        nInput.style.backgroundColor = '#fed7d7'; 
+        hasError = true;
+    } else if (u > 300) {
+        nInput.style.backgroundColor = '#fef08a'; 
+    } else {
+        nInput.style.backgroundColor = '#fff';
+    }
+
+    document.getElementById(r+'u').textContent = u < 0 ? '⚠️' : (Number.isInteger(u) ? u : u.toFixed(1));
+  });
+  return hasError;
+}
+
+function setPartial(r) {
+    let amt = prompt(`請輸入 ${r} 房已繳納的金額：\n(若要取消繳費紀錄，請留空並按確定)`);
+    let hiddenInput = document.getElementById(r+'p_amt');
+    let textBtn = document.getElementById(r+'p_text');
+    let check = document.getElementById(r+'p');
+
+    if (amt === null) return;
+    if (amt === "" || isNaN(amt)) {
+        hiddenInput.value = "";
+        textBtn.textContent = "💸";
+        textBtn.style.color = "#d35400";
+    } else {
+        hiddenInput.value = amt;
+        textBtn.textContent = `繳${amt}`;
+        textBtn.style.color = "#27ae60";
+        check.checked = false; 
+    }
+}
+function clearPartial(r) {
+    if (document.getElementById(r+'p').checked) {
+        document.getElementById(r+'p_amt').value = "";
+        let textBtn = document.getElementById(r+'p_text');
+        textBtn.textContent = "💸";
+        textBtn.style.color = "#d35400";
+    }
+}
+
+// --- 房間與全域設定管理 ---
+function openRoomSettings(room) {
+    currentEditingRoom = room;
+    document.getElementById('settingsModalTitle').innerHTML = `⚙️ ${room} 房間管理中心`;
+    
+    let profile = getTenantProfile(room);
+    document.getElementById('tName').value = profile.tenantName || '';
+    document.getElementById('tPhone').value = profile.tenantPhone || '';
+    document.getElementById('tLeaseStart').value = profile.leaseStart || '';
+    document.getElementById('tLeaseEnd').value = profile.leaseEnd || '';
+    document.getElementById('tNotes').value = profile.tenantNotes || '';
+
+    document.getElementById('templateText').value = localStorage.getItem(`landlord_msg_template_${room}`) || defaultTemplate;
+    document.getElementById('settingsModal').style.display = 'flex';
+}
+function resetTemplate() {
+    if(!currentEditingRoom) return;
+    if(confirm(`確定要恢復 ${currentEditingRoom} 房的預設文案嗎？\n(注意：不會影響房客資料庫內容)`)) {
+        document.getElementById('templateText').value = defaultTemplate;
+    }
+}
+function saveRoomSettings() {
+    if(!currentEditingRoom) return;
+    
+    let profile = {
+        tenantName: document.getElementById('tName').value,
+        tenantPhone: document.getElementById('tPhone').value,
+        leaseStart: document.getElementById('tLeaseStart').value,
+        leaseEnd: document.getElementById('tLeaseEnd').value,
+        tenantNotes: document.getElementById('tNotes').value
+    };
+    localStorage.setItem(`landlord_tenant_profile_${currentEditingRoom}`, JSON.stringify(profile));
+    localStorage.setItem(`landlord_msg_template_${currentEditingRoom}`, document.getElementById('templateText').value);
+    
+    alert(`${currentEditingRoom} 房間設定已更新！(將在背景同步至雲端)`);
+    checkLeaseExpiration(); 
+    closeModal('settingsModal');
+    silentUploadToCloud();
+}
+
+function openAdvancedSettings() {
+    let cfg = getGlobalConfig();
+    document.getElementById('cfgBasePub').value = cfg.basePublicKwh;
+    document.getElementById('cfgDed2').value = cfg.deduction["2"];
+    document.getElementById('cfgDed3').value = cfg.deduction["3"];
+    document.getElementById('cfgDed4').value = cfg.deduction["4"];
+
+    document.getElementById('advancedSettingsModal').style.display = 'flex';
+}
+
+function saveAppConfig() {
+    let cfg = {
+        basePublicKwh: parseFloat(document.getElementById('cfgBasePub').value) || 0,
+        deduction: {
+            "2": parseFloat(document.getElementById('cfgDed2').value) || 0,
+            "3": parseFloat(document.getElementById('cfgDed3').value) || 0,
+            "4": parseFloat(document.getElementById('cfgDed4').value) || 0
+        }
+    };
+    localStorage.setItem('landlord_global_config', JSON.stringify(cfg));
+    alert('✅ 公共用電參數已儲存成功！\n\n新參數將套用於未來的電費結算。\n(已存檔的歷史帳單受快照保護，不會被影響)');
+    silentUploadToCloud();
+}
+
+
+// --- 4. 核心計算與文案生成 ---
+function calculateAll(autoScroll = true, isSilent = false) {
+  if (updateUsage()) {
+      if(!isSilent && !confirm("⚠️ 警告：有房間的「本期度數」小於「上期度數」（紅底標示）。\n\n確定要繼續結算嗎？（若是換新電表請按確定）")) return;
+  }
+
+  let totalBill = 0, totalRealKwh = 0;
+  for (let f of ["2","3","4"]) {
+    let b = document.getElementById('bill'+f).value, k = document.getElementById('kwh'+f).value;
+    if (b && k) { totalBill += parseFloat(b); totalRealKwh += parseFloat(k); }
+  }
+  
+  if(totalRealKwh === 0) {
+      if(!isSilent) alert("請輸入各樓層台電帳單度數與金額！");
+      return;
+  }
+
+  let avgPrice = Math.round((totalBill / totalRealKwh) * 100) / 100;
+  let currentY = document.getElementById('calcYear').value;
+  let currentM = document.getElementById('calcMonth').value;
+  
+  // 顯示的月份區間 (台電兩個月一期)
+  let sM = parseInt(currentM) - 2; 
+  if (sM <= 0) sM += 12;
+  const monthRange = `${sM}-${currentM}`;
+
+  document.getElementById('summary').innerHTML = `
+    ${currentY}-${currentM} 結算<br>
+    台電：${totalBill}元 / ${totalRealKwh}度<br>
+    平均：${avgPrice.toFixed(2)} 元/度
+  `;
+
+  let currentDateName = currentY + '-' + currentM; 
+  let historyUnpaidSum = 0;
+  let historyUnpaidRows = "";
+  let roomDebt = {}; 
+  
+  const history = getHistory();
+  const sortedHistory = [...history].sort((a, b) => {
+      let [yA, mA] = a.name.split('-'); let [yB, mB] = b.name.split('-');
+      return (parseInt(yA)*12 + parseInt(mA)) - (parseInt(yB)*12 + parseInt(mB));
+  });
+
+  // 計算歷史欠款 (使用歷史快照參數)
+  sortedHistory.forEach(h => {
+      if (h.name === currentDateName) return; 
+      let tBill = 0, tKwh = 0;
+      ["2","3","4"].forEach(f => { tBill += parseFloat(h.inputs['bill'+f]) || 0; tKwh += parseFloat(h.inputs['kwh'+f]) || 0; });
+      if(tKwh === 0) return;
+      let pPrice = Math.round((tBill / tKwh) * 100) / 100;
+      
+      // 讀取該歷史紀錄專屬的公電參數快照 (若無則使用舊版預設)
+      let hCfg = h.configSnapshot || { basePublicKwh: 20, deduction: { "2": 0, "3": 0, "4": 180 } };
+
+      ["2","3","4"].forEach(f => {
+          let fRooms = rooms.filter(r => r.startsWith(f));
+          let fPSum = 0; 
+          fRooms.forEach(r => fPSum += Math.max(0, (parseFloat(h.inputs[r+'n'])||0) - (parseFloat(h.inputs[r+'l'])||0)));
+          
+          let floorDeduction = hCfg.deduction[f] || 0;
+          let pubPer = (parseFloat(h.inputs['kwh'+f]||0) - fPSum - floorDeduction) / 3;
+          
+          fRooms.forEach(r => {
+              let isPaid = h.inputs[r+'p'];
+              let paidAmt = h.inputs[r+'p_amt'];
+              let rent = parseFloat(h.inputs[r+'r'])||0;
+              let u = Math.max(0, (parseFloat(h.inputs[r+'n'])||0)-(parseFloat(h.inputs[r+'l'])||0));
+              let total = rent + Math.ceil(u * pPrice) + Math.round((pubPer + hCfg.basePublicKwh) * pPrice);
+              
+              let owed = 0;
+              if (isPaid) owed = 0;
+              else if (paidAmt !== undefined && paidAmt !== "" && !isNaN(paidAmt)) owed = total - parseFloat(paidAmt);
+              else owed = total; 
+
+              if (owed !== 0) { 
+                  if(!roomDebt[r]) roomDebt[r] = { sum: 0 };
+                  roomDebt[r].sum += owed;
+                  historyUnpaidSum += owed;
+                  
+                  let displayAmt = owed > 0 ? `欠款 ${owed}` : `溢繳扣抵 ${Math.abs(owed)}`;
+                  let color = owed > 0 ? "#718096" : "#38a169";
+                  historyUnpaidRows += `<div style="display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed #fed7d7; font-size: 14px; color: ${color};">
+                    <span>[${h.name} 期] <b>${r} 房</b></span><span>${displayAmt} 元</span>
+                  </div>`;
+              }
+          });
+      });
+  });
+
+  // 計算本期費用 (使用當下最新的全域參數)
+  let tableHtml = "", msgHtml = "", unpaidRows = "", unpaidSum = 0;
+  let currentCfg = getGlobalConfig();
+
+  for (let f of ["2","3","4"]) {
+    let floorKwh = getNum('kwh'+f);
+    let floorPersonalSum = 0;
+    let floorRooms = rooms.filter(r => r.startsWith(f));
+    
+    floorRooms.forEach(r => { 
+        floorPersonalSum += Math.max(0, getNum(r+'n') - getNum(r+'l')); 
+    });
+    
+    let floorDeduction = currentCfg.deduction[f] || 0;
+    let pubPer = (floorKwh - floorPersonalSum - floorDeduction) / 3;
+
+    floorRooms.forEach(r => {
+      let rent = getNum(r+'r');
+      let u = Math.max(0, getNum(r+'n') - getNum(r+'l'));
+      
+      let persElec = Math.ceil(u * avgPrice);
+      let pubElec = Math.round((pubPer + currentCfg.basePublicKwh) * avgPrice);
+      let totalElec = persElec + pubElec;
+      let totalKwhForRoom = (u + pubPer + currentCfg.basePublicKwh).toFixed(1);
+      let total = rent + totalElec;
+
+      tableHtml += `<tr><td><b>${r}</b> <button class="btn-room-settings" onclick="openRoomSettings('${r}')" title="房間管理中心">⚙️</button></td><td>${rent}</td><td>${persElec}</td><td>${pubElec}</td><td style="color:#d35400;font-weight:bold;">${total}</td></tr>`;
+      
+      let currentPaidAmtStr = document.getElementById(r+'p_amt').value;
+      let currentPaidAmt = (currentPaidAmtStr !== "" && !isNaN(currentPaidAmtStr)) ? parseFloat(currentPaidAmtStr) : 0;
+      
+      let pastDebt = roomDebt[r] ? roomDebt[r].sum : 0;
+      let debtLine = pastDebt !== 0 ? (pastDebt > 0 ? `⚠️ 前期累計欠款：${pastDebt} 元\n` : `✨ 前期溢繳扣抵：${Math.abs(pastDebt)} 元\n`) : "";
+      
+      let rentLine = "";
+      let closingRemark = "";
+      let grandTotalForRoom = total + pastDebt; 
+
+      if (rent > 0) {
+          if (currentPaidAmt === rent) {
+              rentLine = ""; 
+              grandTotalForRoom -= currentPaidAmt;
+              closingRemark = "\n再麻煩撥空匯款本期電費，謝謝！";
+          } else if (currentPaidAmt > 0) {
+              rentLine = `💰 房租+水費金額：${rent} 元 (已扣除先繳 ${currentPaidAmt} 元)\n`;
+              grandTotalForRoom -= currentPaidAmt;
+              closingRemark = "\n再麻煩撥空匯款餘額，謝謝！";
+          } else {
+              rentLine = `💰 房租+水費金額：${rent} 元\n`;
+              closingRemark = "\n請與下月房租併匯，謝謝！";
+          }
+      } else {
+          if (currentPaidAmt > 0) grandTotalForRoom -= currentPaidAmt;
+      }
+
+      let finalDisplayAmount = grandTotalForRoom < 0 ? `0 (另有溢繳 ${Math.abs(grandTotalForRoom)} 元，留待下期抵扣)` : grandTotalForRoom;
+
+      let roomTemplate = localStorage.getItem(`landlord_msg_template_${r}`) || defaultTemplate;
+      let safeTemplate = escapeHTML(roomTemplate);
+      
+      let customMsg = safeTemplate
+        .replace(/{{房號}}/g, r)
+        .replace(/{{結算年月}}/g, monthRange)
+        .replace(/{{租金明細}}/g, rentLine)
+        .replace(/{{房租}}/g, rent)
+        .replace(/{{已繳}}/g, currentPaidAmt)
+        .replace(/{{本期電費}}/g, totalElec)
+        .replace(/{{總度數}}/g, totalKwhForRoom)
+        .replace(/{{平均電價}}/g, avgPrice.toFixed(2))
+        .replace(/{{前期欠款明細}}/g, debtLine)
+        .replace(/{{應付總額}}/g, finalDisplayAmount)
+        .replace(/{{結語}}/g, closingRemark);
+
+      msgHtml += `<div class="msg-card" onclick="copyText(this)">${customMsg}</div>`;
+
+      let currentIsPaid = document.getElementById(r+'p').checked;
+      let currentOwed = 0;
+      if (currentIsPaid) currentOwed = 0;
+      else if (currentPaidAmt > 0) currentOwed = total - currentPaidAmt; 
+      else currentOwed = total;
+
+      if (currentOwed !== 0) {
+          let displayAmt = currentOwed > 0 ? `${currentOwed} 元` : `溢繳 ${Math.abs(currentOwed)} 元`;
+          let color = currentOwed > 0 ? "#e53e3e" : "#38a169";
+          unpaidRows += `<div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #fed7d7;">
+            <span><b>${r} 房</b></span><span style="font-weight:bold; color:${color};">${displayAmt}</span>
+          </div>`;
+          unpaidSum += currentOwed;
+      }
+    });
+  }
+
+  let allUnpaidRows = unpaidRows;
+  if (historyUnpaidRows) {
+       allUnpaidRows += `<div style="margin-top:12px; font-weight:bold; color:#a0aec0; font-size:14px; text-align:center;">--- 以下為歷史帳款結餘 ---</div>` + historyUnpaidRows;
+  }
+  let grandTotalUnpaid = unpaidSum + historyUnpaidSum;
+
+  document.getElementById('finalTableBody').innerHTML = tableHtml;
+  document.getElementById('messages').innerHTML = msgHtml;
+  document.getElementById('unpaidList').innerHTML = allUnpaidRows || "<div style='text-align:center; color:green; font-weight:bold;'>🎉 所有帳單已全數結清！</div>";
+  document.getElementById('unpaidTotal').innerHTML = `本期未收：${unpaidSum} 元<br><span style="font-size:16px; color:#e53e3e; font-weight:normal;">歷史未結餘：${historyUnpaidSum} 元</span><br><span style="font-size:24px; display:block; margin-top:8px;">累計總欠款：${grandTotalUnpaid} 元</span>`;
+  document.getElementById('result').style.display = 'block';
+  
+  if(autoScroll) {
+      document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+  }
+}
+
+function copyText(el) {
+    const text = el.innerText;
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => { showCopyFeedback(el); }).catch(() => { fallbackCopy(text, el); });
+    } else {
+        fallbackCopy(text, el);
+    }
+}
+function fallbackCopy(text, el) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
+    textArea.style.position = "fixed"; textArea.style.left = "-9999px"; textArea.style.top = "0";
+    document.body.appendChild(textArea); textArea.focus(); textArea.select(); textArea.setSelectionRange(0, 9999); 
+    try { if (document.execCommand('copy')) showCopyFeedback(el); else throw new Error('Copy failed'); } catch (err) { alert("複製失敗，請手動長按選取複製。"); }
+    document.body.removeChild(textArea);
+}
+function showCopyFeedback(el) {
+    const originalBg = el.style.backgroundColor;
+    el.style.backgroundColor = "#e6fffa"; 
+    setTimeout(() => { el.style.backgroundColor = originalBg; }, 600);
+    alert("文案已完整複製！您可以直接貼到 LINE 囉。");
+}
+
+function getHistory() { return JSON.parse(localStorage.getItem('landlord_history_v2') || '[]'); }
+
+function renderHistoryList() {
+  const history = getHistory().sort((a,b) => (parseInt(b.year)*12+parseInt(b.month)) - (parseInt(a.year)*12+parseInt(a.month)));
+  const list = document.getElementById('historyList');
+  
+  if(history.length === 0) {
+      list.innerHTML = "<p style='text-align:center;color:#999;'>尚無存檔</p>";
+      return;
+  }
+  
+  const grouped = {};
+  history.forEach(h => {
+      if(!grouped[h.year]) grouped[h.year] = [];
+      grouped[h.year].push(h);
+  });
+  
+  const sortedYears = Object.keys(grouped).sort((a, b) => b - a);
+
+  let html = '';
+  sortedYears.forEach(year => {
+      html += `<div class="history-year-group">`;
+      html += `<div class="history-year-title">📅 ${year} 年</div>`;
+      html += `<div class="history-month-grid">`;
+      
+      grouped[year].forEach(h => {
+          html += `
+          <div class="history-item">
+              <div class="history-load-btn" onclick="loadHistoryById(${h.id}, true)" title="讀取 ${h.name} 期紀錄">
+                  ${h.month} 月
+              </div>
+              <button class="history-del-btn" onclick="deleteHistoryById(${h.id})" title="刪除此紀錄">✖</button>
+          </div>`;
+      });
+      
+      html += `</div></div>`;
+  });
+  
+  list.innerHTML = html;
+}
+
+function loadHistoryById(id, showAlert = true) {
+    const item = getHistory().find(h => h.id === id);
+    if(!item) return;
+    document.getElementById('calcYear').value = item.year; 
+    document.getElementById('calcMonth').value = item.month;
+    for (let key in item.inputs) {
+        let el = document.getElementById(key);
+        if (el) { if (el.type === 'checkbox') el.checked = item.inputs[key]; else el.value = item.inputs[key]; }
+    }
+    rooms.forEach(r => {
+        let amt = item.inputs[r+'p_amt'];
+        let textBtn = document.getElementById(r+'p_text');
+        if (amt) { textBtn.textContent = `繳${amt}`; textBtn.style.color = "#27ae60"; }
+        else { textBtn.textContent = "💸"; textBtn.style.color = "#d35400"; }
+    });
+    updateUsage(); 
+    
+    calculateAll(showAlert, !showAlert); 
+    
+    if(showAlert) alert(`已成功讀取 ${item.year} 年 ${item.month} 月 紀錄！\n*(該期計算結果已載入當時的公電參數快照)*`);
+}
+
+function deleteHistoryById(id) { if(confirm("確定刪除此紀錄？")) { localStorage.setItem('landlord_history_v2', JSON.stringify(getHistory().filter(h => h.id !== id))); renderHistoryList(); } }
+
+function clearHistory() {
+    if(confirm("⚠️ 您確定要清空所有的歷史紀錄與設定嗎？此操作無法復原！")) {
+        localStorage.removeItem('landlord_history_v2');
+        renderHistoryList();
+        closeModal('advancedSettingsModal');
+        alert("歷史紀錄已清空。");
+    }
+}
+
+function exportJSON() { 
+    let syncData = { 
+        history: getHistory(), 
+        templates: {}, 
+        profiles: {},
+        globalConfig: getGlobalConfig()
+    };
+    rooms.forEach(r => {
+        syncData.templates[r] = localStorage.getItem(`landlord_msg_template_${r}`);
+        syncData.profiles[r] = localStorage.getItem(`landlord_tenant_profile_${r}`);
+    });
+    const b = new Blob([JSON.stringify(syncData, null, 2)], { type: "application/json" }); 
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `虎尾電費完整備份_${new Date().toISOString().slice(0,10)}.json`; a.click(); 
+}
+
+function importJSON(i) { 
+    const r = new FileReader(); 
+    r.onload = e => { 
+        try {
+            let parsed = JSON.parse(e.target.result);
+            if (Array.isArray(parsed)) {
+                localStorage.setItem('landlord_history_v2', e.target.result);
+            } else {
+                localStorage.setItem('landlord_history_v2', JSON.stringify(parsed.history || []));
+                rooms.forEach(rm => {
+                    if (parsed.templates && parsed.templates[rm]) localStorage.setItem(`landlord_msg_template_${rm}`, parsed.templates[rm]);
+                    if (parsed.profiles && parsed.profiles[rm]) localStorage.setItem(`landlord_tenant_profile_${rm}`, parsed.profiles[rm]);
+                });
+                if (parsed.globalConfig) localStorage.setItem('landlord_global_config', JSON.stringify(parsed.globalConfig));
+            }
+            alert("資料還原成功！");
+            location.reload(); 
+        } catch(err) {
+            alert("檔案格式錯誤");
+        }
+    }; 
+    r.readAsText(i.files[0]); 
+}
+
+function openRoomHistory(room) {
+    const history = [...getHistory()].sort((a,b) => (parseInt(a.year)*12+parseInt(a.month))-(parseInt(b.year)*12+parseInt(b.month)));
+    if(history.length === 0) return alert("尚未有歷史紀錄。");
+    const ctx = document.getElementById('roomChartCanvas').getContext('2d');
+    document.getElementById('modalTitle').textContent = `${room} 房 用電趨勢 (度)`;
+    document.getElementById('roomModal').style.display = 'flex';
+    if(roomChart) roomChart.destroy();
+    roomChart = new Chart(ctx, { type: 'line', data: { labels: history.map(h => h.name), datasets: [{ label: '度數', data: history.map(h => Math.max(0, (parseFloat(h.inputs[room+'n'])||0)-(parseFloat(h.inputs[room+'l'])||0))), borderColor: '#c4a86a', fill: true, tension: 0.3 }] }, options: { responsive: true } });
+    let listHtml = "<b>近五期用電：</b><br>";
+    history.slice(-5).reverse().forEach(h => { let u = (parseFloat(h.inputs[room+'n'])||0) - (parseFloat(h.inputs[room+'l'])||0); listHtml += `<div style="display:flex; justify-content:space-between; margin-top:5px;"><span>${h.name}</span><span>${u.toFixed(1)} 度</span></div>`; });
+    document.getElementById('roomHistoryList').innerHTML = listHtml;
+}
+
+function exportExcel() {
+    const history = [...getHistory()].sort((a,b) => (parseInt(a.year)*12+parseInt(a.month))-(parseInt(b.year)*12+parseInt(b.month)));
+    if (history.length === 0) return alert("無資料可以匯出");
+    
+    let excelData = [["日期", "房號", "房客姓名", "電話", "歷史備註", "房租+水費", "上期度數", "本期度數", "使用度數", "單價(元/度)", "個人電費", "公電(分攤)", "總金額", "繳費狀態"]];
+    
+    history.forEach(h => {
+        let tBill = 0, tKwh = 0;
+        ["2","3","4"].forEach(f => { tBill += parseFloat(h.inputs['bill'+f]) || 0; tKwh += parseFloat(h.inputs['kwh'+f]) || 0; });
+        let pPrice = tKwh === 0 ? 0 : Math.round((tBill / tKwh) * 100) / 100;
+        
+        let hCfg = h.configSnapshot || { basePublicKwh: 20, deduction: { "2": 0, "3": 0, "4": 180 } };
+
+        ["2","3","4"].forEach(f => {
+            let fRooms = rooms.filter(r => r.startsWith(f));
+            let fPSum = 0; 
+            fRooms.forEach(r => fPSum += Math.max(0, (parseFloat(h.inputs[r+'n'])||0)-(parseFloat(h.inputs[r+'l'])||0)));
+            let floorDeduction = hCfg.deduction[f] || 0;
+            let pubPer = (parseFloat(h.inputs['kwh'+f]||0) - fPSum - floorDeduction) / 3;
+            
+            fRooms.forEach(r => {
+                let rent = parseFloat(h.inputs[r+'r'])||0;
+                let u = Math.max(0, (parseFloat(h.inputs[r+'n'])||0)-(parseFloat(h.inputs[r+'l'])||0));
+                let pElec = Math.ceil(u * pPrice), pubElec = Math.round((pubPer + hCfg.basePublicKwh) * pPrice);
+                let isPaid = h.inputs[r+'p'];
+                let amt = h.inputs[r+'p_amt'];
+                let status = isPaid ? "全額繳清" : (amt ? `已繳 ${amt}` : "未繳");
+                
+                let tName = h.inputs[r+'_tName'];
+                let tPhone = h.inputs[r+'_tPhone'];
+                let tNotes = h.inputs[r+'_tNotes'];
+                
+                if (tName === undefined) {
+                    let profile = getTenantProfile(r);
+                    let isValidPeriod = false;
+                    
+                    if (profile.leaseStart || profile.leaseEnd) {
+                        let billMonth = parseInt(h.year) * 12 + parseInt(h.month);
+                        let startMonth = 0;
+                        if (profile.leaseStart) {
+                            let sd = new Date(profile.leaseStart);
+                            startMonth = sd.getFullYear() * 12 + (sd.getMonth() + 1);
+                        }
+                        let endMonth = 999999;
+                        if (profile.leaseEnd) {
+                            let ed = new Date(profile.leaseEnd);
+                            endMonth = ed.getFullYear() * 12 + (ed.getMonth() + 1);
+                        }
+                        if (billMonth >= startMonth && billMonth <= endMonth) isValidPeriod = true;
+                    }
+                    
+                    if (isValidPeriod) {
+                        tName = profile.tenantName || '';
+                        tPhone = profile.tenantPhone || '';
+                        tNotes = profile.tenantNotes || '';
+                    } else {
+                        tName = '';
+                        tPhone = '';
+                        tNotes = '';
+                    }
+                }
+
+                excelData.push([h.name, r, tName, tPhone, tNotes, rent, h.inputs[r+'l'], h.inputs[r+'n'], u, pPrice, pElec, pubElec, rent+pElec+pubElec, status]);
+            });
+        });
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(excelData);
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell_ref = XLSX.utils.encode_cell({c: C, r: R});
+            if (!ws[cell_ref]) continue;
+            let bgColor = "FFFFE0"; 
+            let headerName = excelData[0][C];
+            if (["房號", "房客姓名", "電話", "歷史備註"].includes(headerName)) bgColor = "ADD8E6"; 
+            else if (headerName.includes("度數")) bgColor = "FFA500"; 
+            else if (["房租+水費", "個人電費", "公電(分攤)"].includes(headerName)) bgColor = "E6E6FA";
+            
+            ws[cell_ref].s = { 
+                font: { sz: 14, name: "微軟正黑體", bold: (R === 0) }, 
+                fill: { fgColor: { rgb: bgColor } }, 
+                alignment: { horizontal: "center", vertical: "center", wrapText: true }, 
+                border: { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } } 
+            };
+        }
+    }
+    
+    ws['!cols'] = excelData[0].map((colName) => {
+        if (colName === "歷史備註") return { wch: 40 };
+        if (["日期", "電話", "繳費狀態"].includes(colName)) return { wch: 18 };
+        if (colName === "房客姓名") return { wch: 15 };
+        return { wch: 12 };
+    });
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "電費與房客管理明細表");
+    XLSX.writeFile(wb, `虎尾房東管理報表_${new Date().toLocaleDateString().replace(/\//g, '_')}.xlsx`);
+    closeModal('advancedSettingsModal');
+}
+function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+</script>
+
+</body>
+</html>
